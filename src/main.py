@@ -10,6 +10,7 @@ import vtk
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
 from dicom_reader import read_dicom_series, sitk_to_vtk, DicomReaderError
+from mpr_manager import MPRManager
 
 class VtkViewport(QWidget):
     """
@@ -112,6 +113,13 @@ class MainWindow(QMainWindow):
         grid_layout.addWidget(self.view_coronal, 1, 0)
         grid_layout.addWidget(self.view_sagittal, 1, 1)
 
+        # Inicializa o MPR Manager
+        self.mpr_manager = MPRManager(
+            interactor_axial=self.view_axial.vtkWidget,
+            interactor_coronal=self.view_coronal.vtkWidget,
+            interactor_sagittal=self.view_sagittal.vtkWidget
+        )
+
     def create_menu_bar(self):
         """Cria o menu superior da janela principal."""
         menu_bar = self.menuBar()
@@ -143,12 +151,15 @@ class MainWindow(QMainWindow):
                 # Converte para vtkImageData (conforme Fase 2, impressão de resultados já ocorre nas funções)
                 vtk_data = sitk_to_vtk(sitk_image)
 
-                # Log de sucesso (a renderização será na Fase 3)
+                # Renderizar MPR via MPR Manager
+                self.mpr_manager.set_volume(vtk_data)
+
+                # Log de sucesso
                 print("Leitura e conversão DICOM completadas com sucesso!")
                 QMessageBox.information(
                     self,
                     "DICOM Importado",
-                    f"Série importada com sucesso.\n"
+                    f"Série importada com sucesso e MPR renderizado.\n"
                     f"Dimensões VTK: {vtk_data.GetDimensions()}\n"
                     f"Espaçamento VTK: {vtk_data.GetSpacing()}"
                 )
