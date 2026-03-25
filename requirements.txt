@@ -1,0 +1,3 @@
+PySide6>=6.0.0
+vtk>=9.0.0
+SimpleITK>=2.0.0

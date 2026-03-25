@@ -91,6 +91,14 @@ def sitk_to_vtk(sitk_image):
     # Retornar a saída final de VTK
     vtk_data = vtk_importer.GetOutput()
 
+    # IMPORTANTE: A função vtkImageImportFromArray não copia os dados da memória do array Numpy,
+    # ela aponta diretamente para eles. Portanto, se `nda` ou `vtk_importer` forem destruídos (garbage collected)
+    # no fim desta função, ocorrerá um SegFault na hora de renderizar em C++ (Fase 3).
+    # Precisamos anexar as referências como atributos do objeto vtkImageData retornado
+    # para mantê-las vivas na memória pelo mesmo tempo de vida do vtk_data.
+    setattr(vtk_data, '_numpy_array_reference', nda)
+    setattr(vtk_data, '_vtk_importer_reference', vtk_importer)
+
     # Informação para confirmar
     dims = vtk_data.GetDimensions()
     v_spacing = vtk_data.GetSpacing()
