@@ -12,6 +12,7 @@ from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 from dicom_reader import read_dicom_series, sitk_to_vtk, DicomReaderError
 from mpr_manager import MPRManager
 from volume_renderer import VolumeRenderer
+from mesh_manager import MeshManager, MeshManagerError
 
 class VtkViewport(QWidget):
     """
@@ -126,6 +127,13 @@ class MainWindow(QMainWindow):
             interactor=self.view_3d.vtkWidget
         )
 
+        # Inicializa o Gerenciador de Malhas (Escaneamento Intraoral)
+        # O MeshManager compartilha do mesmo renderer e render_window do VolumeRenderer (4º Quadrante)
+        self.mesh_manager = MeshManager(
+            renderer=self.volume_renderer.renderer,
+            render_window=self.volume_renderer.render_window
+        )
+
     def create_menu_bar(self):
         """Cria o menu superior da janela principal."""
         menu_bar = self.menuBar()
@@ -137,8 +145,13 @@ class MainWindow(QMainWindow):
         import_dicom_action = QAction("Import DICOM Folder", self)
         import_dicom_action.setStatusTip("Import a folder containing DICOM series")
         import_dicom_action.triggered.connect(self.import_dicom_folder)
-
         file_menu.addAction(import_dicom_action)
+
+        # Ação Importar Malha Intraoral
+        import_mesh_action = QAction("Import Intraoral Scan", self)
+        import_mesh_action.setStatusTip("Import STL, PLY or OBJ intraoral surface mesh")
+        import_mesh_action.triggered.connect(self.import_intraoral_scan)
+        file_menu.addAction(import_mesh_action)
 
     def import_dicom_folder(self):
         """Abre uma caixa de diálogo para o usuário escolher a pasta DICOM e inicia a importação."""
@@ -182,6 +195,34 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 traceback.print_exc()
                 QMessageBox.critical(self, "Erro Inesperado", f"Ocorreu um erro fatal: {str(e)}")
+
+    def import_intraoral_scan(self):
+        """Abre uma caixa de diálogo para o usuário escolher a malha 3D e renderiza sobre o crânio."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Intraoral Scan (Mesh)",
+            "",
+            "3D Mesh Files (*.stl *.ply *.obj)"
+        )
+
+        if file_path:
+            try:
+                # Usa o módulo mesh_manager para ler o STL/PLY/OBJ e jogar na 4ª janela
+                self.mesh_manager.load_mesh(file_path)
+
+                # Log de sucesso
+                QMessageBox.information(
+                    self,
+                    "Scan Intraoral Importado",
+                    f"Malha '{file_path.split('/')[-1]}' importada com sucesso no quadrante 3D."
+                )
+
+            except MeshManagerError as e:
+                QMessageBox.critical(self, "Erro ao carregar Malha", str(e))
+                print(f"Erro ao carregar malha intraoral: {str(e)}")
+            except Exception as e:
+                traceback.print_exc()
+                QMessageBox.critical(self, "Erro Inesperado", f"Ocorreu um erro fatal ao carregar malha: {str(e)}")
 
 
     def start_vtks(self):
