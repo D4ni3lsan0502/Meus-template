@@ -11,6 +11,7 @@ from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
 from dicom_reader import read_dicom_series, sitk_to_vtk, DicomReaderError
 from mpr_manager import MPRManager
+from volume_renderer import VolumeRenderer
 
 class VtkViewport(QWidget):
     """
@@ -120,6 +121,11 @@ class MainWindow(QMainWindow):
             interactor_sagittal=self.view_sagittal.vtkWidget
         )
 
+        # Inicializa o Volume Renderer (Crânio/Mandíbula 3D)
+        self.volume_renderer = VolumeRenderer(
+            interactor=self.view_3d.vtkWidget
+        )
+
     def create_menu_bar(self):
         """Cria o menu superior da janela principal."""
         menu_bar = self.menuBar()
@@ -154,12 +160,15 @@ class MainWindow(QMainWindow):
                 # Renderizar MPR via MPR Manager
                 self.mpr_manager.set_volume(vtk_data)
 
+                # Renderizar Crânio/Mandíbula 3D na GPU
+                self.volume_renderer.set_volume(vtk_data)
+
                 # Log de sucesso
                 print("Leitura e conversão DICOM completadas com sucesso!")
                 QMessageBox.information(
                     self,
                     "DICOM Importado",
-                    f"Série importada com sucesso e MPR renderizado.\n"
+                    f"Série importada com sucesso e MPR/Volume 3D renderizados.\n"
                     f"Dimensões VTK: {vtk_data.GetDimensions()}\n"
                     f"Espaçamento VTK: {vtk_data.GetSpacing()}"
                 )
