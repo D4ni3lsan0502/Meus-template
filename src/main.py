@@ -2,7 +2,8 @@ import sys
 import traceback
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QGridLayout,
-    QVBoxLayout, QLabel, QFrame, QMenuBar, QMenu, QFileDialog, QMessageBox
+    QVBoxLayout, QLabel, QFrame, QMenuBar, QMenu, QFileDialog, QMessageBox,
+    QDockWidget, QPushButton
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
@@ -13,6 +14,7 @@ from dicom_reader import read_dicom_series, sitk_to_vtk, DicomReaderError
 from mpr_manager import MPRManager
 from volume_renderer import VolumeRenderer
 from mesh_manager import MeshManager, MeshManagerError
+from registration_manager import RegistrationManager, RegistrationManagerError
 
 class VtkViewport(QWidget):
     """
@@ -134,6 +136,53 @@ class MainWindow(QMainWindow):
             render_window=self.volume_renderer.render_window
         )
 
+        # Inicializa o Gerenciador de Registro (Landmark + ICP)
+        self.registration_manager = RegistrationManager(
+            interactor=self.view_3d.vtkWidget,
+            renderer=self.volume_renderer.renderer,
+            render_window=self.volume_renderer.render_window
+        )
+
+        # Criar o Painel de Ferramentas (Dock Widget)
+        self.create_tools_dock()
+
+    def create_tools_dock(self):
+        """Cria um painel lateral contendo os controles da Fase 6 (Registro/ICP)."""
+        dock = QDockWidget("Registration Tools", self)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+
+        # Container e Layout
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setAlignment(Qt.AlignTop)
+
+        # Etapa 1: Landmarks (Coarse Fit)
+        lbl_step1 = QLabel("<b>Step 1: Landmark Registration</b>")
+        btn_mark_dicom = QPushButton("Marcar Pontos DICOM")
+        btn_mark_dicom.clicked.connect(self.on_mark_dicom_points)
+
+        btn_mark_mesh = QPushButton("Marcar Pontos STL")
+        btn_mark_mesh.clicked.connect(self.on_mark_mesh_points)
+
+        btn_align = QPushButton("Alinhar por Pontos (Coarse)")
+        btn_align.clicked.connect(self.on_align_landmarks)
+
+        # Etapa 2: ICP (Fine Fit)
+        lbl_step2 = QLabel("<br><b>Step 2: Auto Refinement</b>")
+        btn_icp = QPushButton("Refinar (ICP)")
+        btn_icp.clicked.connect(self.on_refine_icp)
+
+        # Adiciona botões ao painel
+        layout.addWidget(lbl_step1)
+        layout.addWidget(btn_mark_dicom)
+        layout.addWidget(btn_mark_mesh)
+        layout.addWidget(btn_align)
+        layout.addWidget(lbl_step2)
+        layout.addWidget(btn_icp)
+
+        dock.setWidget(panel)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
     def create_menu_bar(self):
         """Cria o menu superior da janela principal."""
         menu_bar = self.menuBar()
@@ -176,6 +225,9 @@ class MainWindow(QMainWindow):
                 # Renderizar Crânio/Mandíbula 3D na GPU
                 self.volume_renderer.set_volume(vtk_data)
 
+                # Passa o volume para o Gerenciador de Registro também
+                self.registration_manager.set_dicom_volume(vtk_data)
+
                 # Log de sucesso
                 print("Leitura e conversão DICOM completadas com sucesso!")
                 QMessageBox.information(
@@ -210,6 +262,9 @@ class MainWindow(QMainWindow):
                 # Usa o módulo mesh_manager para ler o STL/PLY/OBJ e jogar na 4ª janela
                 self.mesh_manager.load_mesh(file_path)
 
+                # Passa a malha pro Registration Manager
+                self.registration_manager.set_mesh_actor(self.mesh_manager.mesh_actor)
+
                 # Log de sucesso
                 QMessageBox.information(
                     self,
@@ -224,6 +279,41 @@ class MainWindow(QMainWindow):
                 traceback.print_exc()
                 QMessageBox.critical(self, "Erro Inesperado", f"Ocorreu um erro fatal ao carregar malha: {str(e)}")
 
+    # -----------------------------
+    # Tool Panel Events (Registration)
+    # -----------------------------
+    def on_mark_dicom_points(self):
+        try:
+            self.registration_manager.start_picking_dicom()
+        except RegistrationManagerError as e:
+            QMessageBox.warning(self, "Aviso", str(e))
+
+    def on_mark_mesh_points(self):
+        try:
+            self.registration_manager.start_picking_mesh()
+        except RegistrationManagerError as e:
+            QMessageBox.warning(self, "Aviso", str(e))
+
+    def on_align_landmarks(self):
+        try:
+            self.registration_manager.align_landmarks()
+        except RegistrationManagerError as e:
+            QMessageBox.warning(self, "Erro no Alinhamento", str(e))
+
+    def on_refine_icp(self):
+        try:
+            # Avisar que pode demorar
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.registration_manager.refine_icp()
+            QApplication.restoreOverrideCursor()
+            QMessageBox.information(self, "Sucesso", "ICP finalizado com sucesso. Modelos alinhados!")
+        except RegistrationManagerError as e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self, "Erro no ICP", str(e))
+        except Exception as e:
+            QApplication.restoreOverrideCursor()
+            traceback.print_exc()
+            QMessageBox.critical(self, "Erro Fatal ICP", str(e))
 
     def start_vtks(self):
         """Precisa ser chamado após o window.show() para inicializar os contextos OpenGL do VTK."""
