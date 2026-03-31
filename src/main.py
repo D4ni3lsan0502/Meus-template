@@ -3,7 +3,7 @@ import traceback
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QGridLayout,
     QVBoxLayout, QLabel, QFrame, QMenuBar, QMenu, QFileDialog, QMessageBox,
-    QDockWidget, QPushButton
+    QDockWidget, QPushButton, QDoubleSpinBox, QHBoxLayout
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
@@ -16,6 +16,7 @@ from src.volume_renderer import VolumeRenderer
 from src.mesh_manager import MeshManager, MeshManagerError
 from src.registration_manager import RegistrationManager, RegistrationManagerError
 from src.nerve_manager import NerveManager
+from src.implant_manager import ImplantManager
 
 class VtkViewport(QWidget):
     """
@@ -166,8 +167,99 @@ class MainWindow(QMainWindow):
             ]
         )
 
+        # Inicializa o Gerenciador de Implantes (Fase 8)
+        self.implant_manager = ImplantManager(
+            interactors=[
+                self.view_axial.vtkWidget,
+                self.view_coronal.vtkWidget,
+                self.view_sagittal.vtkWidget,
+                self.view_3d.vtkWidget
+            ],
+            renderers=[
+                self.mpr_manager.viewers[2].GetRenderer(), # Axial
+                self.mpr_manager.viewers[1].GetRenderer(), # Coronal
+                self.mpr_manager.viewers[0].GetRenderer(), # Sagital
+                self.volume_renderer.renderer
+            ],
+            render_windows=[
+                self.view_axial.vtkWidget.GetRenderWindow(),
+                self.view_coronal.vtkWidget.GetRenderWindow(),
+                self.view_sagittal.vtkWidget.GetRenderWindow(),
+                self.view_3d.vtkWidget.GetRenderWindow()
+            ]
+        )
+
         # Criar o Painel de Ferramentas (Dock Widget)
         self.create_tools_dock()
+        self.create_implant_dock()
+
+    def create_implant_dock(self):
+        """Cria um painel lateral esquerdo contendo os controles de Implante Virtual (Fase 8)."""
+        dock = QDockWidget("Gerenciador de Implantes", self)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setAlignment(Qt.AlignTop)
+
+        # Botão principal
+        btn_add = QPushButton("Adicionar Implante")
+        btn_add.clicked.connect(self.on_add_implant)
+
+        # Controles Paramétricos (Comprimento e Diâmetro)
+        # O padrão do mercado é 4.0mm de diâmetro e 10mm de comprimento
+        lbl_size = QLabel("<b>Dimensões (mm):</b>")
+
+        h_layout_d = QHBoxLayout()
+        h_layout_d.addWidget(QLabel("Diâmetro:"))
+        self.spin_diameter = QDoubleSpinBox()
+        self.spin_diameter.setRange(2.0, 8.0)
+        self.spin_diameter.setSingleStep(0.5)
+        self.spin_diameter.setValue(4.0)
+        self.spin_diameter.valueChanged.connect(self.on_implant_parameter_changed)
+        h_layout_d.addWidget(self.spin_diameter)
+
+        h_layout_l = QHBoxLayout()
+        h_layout_l.addWidget(QLabel("Comprimento:"))
+        self.spin_length = QDoubleSpinBox()
+        self.spin_length.setRange(5.0, 20.0)
+        self.spin_length.setSingleStep(1.0)
+        self.spin_length.setValue(10.0)
+        self.spin_length.valueChanged.connect(self.on_implant_parameter_changed)
+        h_layout_l.addWidget(self.spin_length)
+
+        # Controles de Angulação
+        lbl_angle = QLabel("<br><b>Angulação (Graus):</b>")
+
+        h_layout_tilt = QHBoxLayout()
+        h_layout_tilt.addWidget(QLabel("Tilt (X):"))
+        self.spin_tilt = QDoubleSpinBox()
+        self.spin_tilt.setRange(-90.0, 90.0)
+        self.spin_tilt.setSingleStep(5.0)
+        self.spin_tilt.setValue(0.0)
+        self.spin_tilt.valueChanged.connect(self.on_implant_parameter_changed)
+        h_layout_tilt.addWidget(self.spin_tilt)
+
+        h_layout_pan = QHBoxLayout()
+        h_layout_pan.addWidget(QLabel("Pan (Y):"))
+        self.spin_pan = QDoubleSpinBox()
+        self.spin_pan.setRange(-90.0, 90.0)
+        self.spin_pan.setSingleStep(5.0)
+        self.spin_pan.setValue(0.0)
+        self.spin_pan.valueChanged.connect(self.on_implant_parameter_changed)
+        h_layout_pan.addWidget(self.spin_pan)
+
+        # Adicionar os blocos na UI
+        layout.addWidget(btn_add)
+        layout.addWidget(lbl_size)
+        layout.addLayout(h_layout_d)
+        layout.addLayout(h_layout_l)
+        layout.addWidget(lbl_angle)
+        layout.addLayout(h_layout_tilt)
+        layout.addLayout(h_layout_pan)
+
+        dock.setWidget(panel)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
 
     def create_tools_dock(self):
         """Cria um painel lateral contendo os controles da Fase 6 (Registro/ICP)."""
@@ -378,6 +470,49 @@ class MainWindow(QMainWindow):
             traceback.print_exc()
             QMessageBox.critical(self, "Erro ao Finalizar Mapeamento", str(e))
 
+    # -----------------------------
+    # Implant Manager Events
+    # -----------------------------
+    def on_add_implant(self):
+        """Instancia um novo implante virtual 3D na cena."""
+        try:
+            # Pega as dimensões atuais da UI para criar o cilindro corretamente
+            diameter = self.spin_diameter.value()
+            length = self.spin_length.value()
+            radius = diameter / 2.0
+
+            # Adiciona o implante em uma coordenada inicial neutra
+            # (No caso clínico, normalmente o ponto é extraído de um clique, mas começaremos no centro 0,0,0)
+            self.implant_manager.add_implant(position=(0,0,0), radius=radius, length=length)
+
+            # Reseta os spinners de rotação para zero (implante novo é sempre reto)
+            self.spin_tilt.blockSignals(True)
+            self.spin_pan.blockSignals(True)
+            self.spin_tilt.setValue(0.0)
+            self.spin_pan.setValue(0.0)
+            self.spin_tilt.blockSignals(False)
+            self.spin_pan.blockSignals(False)
+
+        except Exception as e:
+            traceback.print_exc()
+            QMessageBox.critical(self, "Erro ao Adicionar Implante", str(e))
+
+    def on_implant_parameter_changed(self):
+        """Disparado quando o dentista clica na setinha de diâmetro, altura, etc."""
+        try:
+            diameter = self.spin_diameter.value()
+            length = self.spin_length.value()
+            tilt = self.spin_tilt.value()
+            pan = self.spin_pan.value()
+
+            self.implant_manager.update_active_implant(
+                diameter=diameter,
+                length=length,
+                tilt=tilt,
+                pan=pan
+            )
+        except Exception as e:
+            print(f"Erro ao atualizar parâmetros: {str(e)}")
 
     def start_vtks(self):
         """Precisa ser chamado após o window.show() para inicializar os contextos OpenGL do VTK."""
