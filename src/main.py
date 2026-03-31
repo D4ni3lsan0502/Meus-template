@@ -17,7 +17,7 @@ class VtkViewport(QWidget):
     Um widget customizado que contém uma janela de renderização do VTK
     e um label identificando o plano (Axial, Sagittal, Coronal ou 3D).
     """
-    def __init__(self, title, parent=None):
+    def __init__(self, title, parent=None, mapper=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -47,15 +47,17 @@ class VtkViewport(QWidget):
         self.vtkWidget.GetRenderWindow().GetInteractor().SetInteractorStyle(style)
 
         # Para testes visuais, adicionar um cubo 3D no viewport 3D e nos 2D
-        # Na Fase 2 isso será substituído pelos dados DICOM/STL
-        source = vtk.vtkCubeSource()
-        source.SetCenter(0, 0, 0)
-
-        mapper = vtk.vtkPolyDataMapper()
-        mapper.SetInputConnection(source.GetOutputPort())
+        # Se um mapper compartilhado for fornecido, usa-o para economizar recursos
+        if mapper:
+            self.mapper = mapper
+        else:
+            source = vtk.vtkCubeSource()
+            source.SetCenter(0, 0, 0)
+            self.mapper = vtk.vtkPolyDataMapper()
+            self.mapper.SetInputConnection(source.GetOutputPort())
 
         actor = vtk.vtkActor()
-        actor.SetMapper(mapper)
+        actor.SetMapper(self.mapper)
 
         # Cor do cubo dependendo da View para debug visual
         if title == "Axial":
@@ -97,11 +99,19 @@ class MainWindow(QMainWindow):
         grid_layout.setContentsMargins(5, 5, 5, 5)
         grid_layout.setSpacing(5)
 
-        # Criar os 4 viewports
-        self.view_axial = VtkViewport("Axial")
-        self.view_sagittal = VtkViewport("Sagittal")
-        self.view_coronal = VtkViewport("Coronal")
-        self.view_3d = VtkViewport("3D View")
+        # Para testes visuais, instanciar apenas uma vez o mapper compartilhado
+        # Isso economiza memória e tempo de inicialização ao compartilhar
+        # o pipeline do cubo entre todos os viewports.
+        self.cube_source = vtk.vtkCubeSource()
+        self.cube_source.SetCenter(0, 0, 0)
+        self.shared_cube_mapper = vtk.vtkPolyDataMapper()
+        self.shared_cube_mapper.SetInputConnection(self.cube_source.GetOutputPort())
+
+        # Criar os 4 viewports passando o mapper compartilhado
+        self.view_axial = VtkViewport("Axial", mapper=self.shared_cube_mapper)
+        self.view_sagittal = VtkViewport("Sagittal", mapper=self.shared_cube_mapper)
+        self.view_coronal = VtkViewport("Coronal", mapper=self.shared_cube_mapper)
+        self.view_3d = VtkViewport("3D View", mapper=self.shared_cube_mapper)
 
         # Adicionar ao Grid
         # 0,0 (Topo-Esquerda): Axial
