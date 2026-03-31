@@ -10,11 +10,12 @@ from PySide6.QtGui import QAction
 import vtk
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
-from dicom_reader import read_dicom_series, sitk_to_vtk, DicomReaderError
-from mpr_manager import MPRManager
-from volume_renderer import VolumeRenderer
-from mesh_manager import MeshManager, MeshManagerError
-from registration_manager import RegistrationManager, RegistrationManagerError
+from src.dicom_reader import read_dicom_series, sitk_to_vtk, DicomReaderError
+from src.mpr_manager import MPRManager
+from src.volume_renderer import VolumeRenderer
+from src.mesh_manager import MeshManager, MeshManagerError
+from src.registration_manager import RegistrationManager, RegistrationManagerError
+from src.nerve_manager import NerveManager
 
 class VtkViewport(QWidget):
     """
@@ -143,6 +144,28 @@ class MainWindow(QMainWindow):
             render_window=self.volume_renderer.render_window
         )
 
+        # Inicializa o Gerenciador de Nervo Mandibular
+        self.nerve_manager = NerveManager(
+            interactors=[
+                self.view_axial.vtkWidget,
+                self.view_coronal.vtkWidget,
+                self.view_sagittal.vtkWidget,
+                self.view_3d.vtkWidget
+            ],
+            renderers=[
+                self.mpr_manager.viewers[2].GetRenderer(), # Axial
+                self.mpr_manager.viewers[1].GetRenderer(), # Coronal
+                self.mpr_manager.viewers[0].GetRenderer(), # Sagital
+                self.volume_renderer.renderer
+            ],
+            render_windows=[
+                self.view_axial.vtkWidget.GetRenderWindow(),
+                self.view_coronal.vtkWidget.GetRenderWindow(),
+                self.view_sagittal.vtkWidget.GetRenderWindow(),
+                self.view_3d.vtkWidget.GetRenderWindow()
+            ]
+        )
+
         # Criar o Painel de Ferramentas (Dock Widget)
         self.create_tools_dock()
 
@@ -172,6 +195,17 @@ class MainWindow(QMainWindow):
         btn_icp = QPushButton("Refinar (ICP)")
         btn_icp.clicked.connect(self.on_refine_icp)
 
+        # Etapa 3: Mapeamento do Canal Mandibular (Nervo)
+        lbl_step3 = QLabel("<br><b>Step 3: Nerve Mapping</b>")
+        btn_start_nerve = QPushButton("Iniciar Mapeamento de Nervo")
+        btn_start_nerve.clicked.connect(self.on_start_nerve_mapping)
+
+        btn_undo_nerve = QPushButton("Desfazer Último Ponto")
+        btn_undo_nerve.clicked.connect(self.on_undo_nerve_point)
+
+        btn_finish_nerve = QPushButton("Finalizar Nervo")
+        btn_finish_nerve.clicked.connect(self.on_finish_nerve_mapping)
+
         # Adiciona botões ao painel
         layout.addWidget(lbl_step1)
         layout.addWidget(btn_mark_dicom)
@@ -179,6 +213,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(btn_align)
         layout.addWidget(lbl_step2)
         layout.addWidget(btn_icp)
+        layout.addWidget(lbl_step3)
+        layout.addWidget(btn_start_nerve)
+        layout.addWidget(btn_undo_nerve)
+        layout.addWidget(btn_finish_nerve)
 
         dock.setWidget(panel)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
@@ -314,6 +352,32 @@ class MainWindow(QMainWindow):
             QApplication.restoreOverrideCursor()
             traceback.print_exc()
             QMessageBox.critical(self, "Erro Fatal ICP", str(e))
+
+    # -----------------------------
+    # Tool Panel Events (Nerve Mapping)
+    # -----------------------------
+    def on_start_nerve_mapping(self):
+        try:
+            self.nerve_manager.start_mapping()
+        except Exception as e:
+            traceback.print_exc()
+            QMessageBox.critical(self, "Erro ao Iniciar Mapeamento do Nervo", str(e))
+
+    def on_undo_nerve_point(self):
+        try:
+            self.nerve_manager.undo_last_point()
+        except Exception as e:
+            traceback.print_exc()
+            QMessageBox.critical(self, "Erro ao Desfazer Ponto", str(e))
+
+    def on_finish_nerve_mapping(self):
+        try:
+            self.nerve_manager.finish_mapping()
+            QMessageBox.information(self, "Sucesso", "Mapeamento do Canal Mandibular finalizado.")
+        except Exception as e:
+            traceback.print_exc()
+            QMessageBox.critical(self, "Erro ao Finalizar Mapeamento", str(e))
+
 
     def start_vtks(self):
         """Precisa ser chamado após o window.show() para inicializar os contextos OpenGL do VTK."""
