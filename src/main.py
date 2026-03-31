@@ -184,7 +184,9 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    # Passamos apenas o nome do executável para QApplication para evitar o processamento
+    # de argumentos de linha de comando não confiáveis pelo Qt.
+    app = QApplication([sys.argv[0]])
 
     # Estilo escuro básico para o app
     app.setStyle("Fusion")
