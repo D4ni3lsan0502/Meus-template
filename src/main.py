@@ -2,7 +2,7 @@ import sys
 import traceback
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QGridLayout,
-    QVBoxLayout, QLabel, QFrame, QMenuBar, QMenu, QFileDialog, QMessageBox
+    QVBoxLayout, QLabel, QMenuBar, QMenu, QFileDialog, QMessageBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
