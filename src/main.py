@@ -587,7 +587,6 @@ class MainWindow(QMainWindow):
             )
 
         except GuideGeneratorError as e:
-            QApplication.restoreOverrideCursor()
             QMessageBox.warning(self, "Aviso - Guia Cirúrgico", str(e))
         except Exception as e:
             traceback.print_exc()
