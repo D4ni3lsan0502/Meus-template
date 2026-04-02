@@ -3,7 +3,7 @@ import traceback
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QGridLayout,
     QVBoxLayout, QLabel, QFrame, QMenuBar, QMenu, QFileDialog, QMessageBox,
-    QDockWidget, QPushButton, QDoubleSpinBox, QHBoxLayout
+    QDockWidget, QPushButton, QDoubleSpinBox, QHBoxLayout, QProgressDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
@@ -17,6 +17,7 @@ from src.mesh_manager import MeshManager, MeshManagerError
 from src.registration_manager import RegistrationManager, RegistrationManagerError
 from src.nerve_manager import NerveManager
 from src.implant_manager import ImplantManager
+from src.guide_generator import GuideGenerator, GuideGeneratorError
 
 class VtkViewport(QWidget):
     """
@@ -189,6 +190,12 @@ class MainWindow(QMainWindow):
             ]
         )
 
+        # Inicializa o Gerador de Guia Cirúrgico (Fase 9 - Final)
+        self.guide_generator = GuideGenerator(
+            renderer=self.volume_renderer.renderer,
+            render_window=self.volume_renderer.render_window
+        )
+
         # Criar o Painel de Ferramentas (Dock Widget)
         self.create_tools_dock()
         self.create_implant_dock()
@@ -249,6 +256,12 @@ class MainWindow(QMainWindow):
         self.spin_pan.valueChanged.connect(self.on_implant_parameter_changed)
         h_layout_pan.addWidget(self.spin_pan)
 
+        # Fase 9 (CAD Booleano Final)
+        lbl_guide = QLabel("<br><b>Guia Cirúrgico (Fase 9):</b>")
+        btn_guide = QPushButton("Gerar e Exportar Guia Cirúrgico")
+        btn_guide.setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 10px;")
+        btn_guide.clicked.connect(self.on_generate_guide)
+
         # Adicionar os blocos na UI
         layout.addWidget(btn_add)
         layout.addWidget(lbl_size)
@@ -257,6 +270,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(lbl_angle)
         layout.addLayout(h_layout_tilt)
         layout.addLayout(h_layout_pan)
+
+        # Guia
+        layout.addWidget(lbl_guide)
+        layout.addWidget(btn_guide)
 
         dock.setWidget(panel)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
@@ -513,6 +530,64 @@ class MainWindow(QMainWindow):
             )
         except Exception as e:
             print(f"Erro ao atualizar parâmetros: {str(e)}")
+
+    # -----------------------------
+    # Surgical Guide Generation (Phase 9)
+    # -----------------------------
+    def on_generate_guide(self):
+        """Dispara a lógica pesada de CAD booleano para gerar o guia cirúrgico em resina."""
+        try:
+            # 1. Escolher onde salvar o STL do Guia
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Salvar Guia Cirúrgico (STL para Impressão 3D)",
+                "guia_cirurgico_paciente.stl",
+                "STL Files (*.stl)"
+            )
+
+            if not file_path:
+                return
+
+            # Exibe Barra de Progresso, pois operações Manifold3D demoram de 5s a 20s.
+            progress = QProgressDialog("Calculando Geometria Booleana do Guia Cirúrgico...\nIsso pode levar alguns segundos.", None, 0, 0, self)
+            progress.setWindowTitle("Processando CAD")
+            progress.setWindowModality(Qt.WindowModal)
+            progress.setMinimumDuration(0) # Força mostrar instantaneamente
+            progress.show()
+            QApplication.processEvents() # Garante que a UI desenhe o popup antes de travar o thread na matemática
+
+            try:
+                # Puxa o ator do escaneamento intraoral (do mesh_manager)
+                mesh_actor = self.mesh_manager.mesh_actor
+
+                # Puxa os implantes alocados
+                implants = self.implant_manager.implants
+
+                # Geração! (Passo A, B e C)
+                self.guide_generator.generate_guide(
+                    mesh_actor=mesh_actor,
+                    implants=implants,
+                    export_path=file_path,
+                    thickness=2.5,  # 2.5mm de parede de resina
+                    clearance=0.15  # 0.15mm de folga para a resina encaixar no dente perfeitamente
+                )
+            finally:
+                progress.close()
+
+            QMessageBox.information(
+                self,
+                "Sucesso",
+                "Guia Cirúrgico gerado e renderizado com sucesso!\n"
+                f"Salvo em: {file_path}\n"
+                "Pronto para impressoras 3D Formlabs/Phrozen."
+            )
+
+        except GuideGeneratorError as e:
+            QApplication.restoreOverrideCursor()
+            QMessageBox.warning(self, "Aviso - Guia Cirúrgico", str(e))
+        except Exception as e:
+            traceback.print_exc()
+            QMessageBox.critical(self, "Erro Fatal no Motor Booleano", f"Falha na geração CAD: {str(e)}")
 
     def start_vtks(self):
         """Precisa ser chamado após o window.show() para inicializar os contextos OpenGL do VTK."""
