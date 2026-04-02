@@ -1,12 +1,12 @@
 import sys
 import traceback
-from PySide6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QGridLayout,
     QVBoxLayout, QLabel, QFrame, QMenuBar, QMenu, QFileDialog, QMessageBox,
-    QDockWidget, QPushButton, QDoubleSpinBox, QHBoxLayout, QProgressDialog
+    QDockWidget, QPushButton, QDoubleSpinBox, QHBoxLayout, QProgressDialog,
+    QAction
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
+from PyQt5.QtCore import Qt
 import vtk
 from vtkmodules.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 
@@ -23,8 +23,9 @@ class VtkViewport(QWidget):
     """
     Um widget customizado que contém uma janela de renderização do VTK
     e um label identificando o plano (Axial, Sagittal, Coronal ou 3D).
+    A cor de fundo pode ser alterada para diferenciar as vistas.
     """
-    def __init__(self, title, parent=None):
+    def __init__(self, title, bg_color=(0.1, 0.1, 0.1), parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -42,7 +43,7 @@ class VtkViewport(QWidget):
 
         # Configurar Renderer do VTK
         self.renderer = vtk.vtkRenderer()
-        self.renderer.SetBackground(0.1, 0.1, 0.1) # Cor de fundo escura (cinza escuro)
+        self.renderer.SetBackground(*bg_color)
         self.vtkWidget.GetRenderWindow().AddRenderer(self.renderer)
 
         # Interactor Style para imagens 2D ou 3D
@@ -86,11 +87,12 @@ class VtkViewport(QWidget):
 class MainWindow(QMainWindow):
     """
     Janela Principal do Software de Planejamento de Implantes.
+    Migrado para PyQt5.
     """
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Implant Planner - Fase 2 (Leitura DICOM)")
-        self.resize(1024, 768)
+        self.setWindowTitle("Implant Planner - Dental CAD")
+        self.resize(1280, 800)
 
         # Criar a barra de menu
         self.create_menu_bar()
@@ -104,11 +106,11 @@ class MainWindow(QMainWindow):
         grid_layout.setContentsMargins(5, 5, 5, 5)
         grid_layout.setSpacing(5)
 
-        # Criar os 4 viewports
-        self.view_axial = VtkViewport("Axial")
-        self.view_sagittal = VtkViewport("Sagittal")
-        self.view_coronal = VtkViewport("Coronal")
-        self.view_3d = VtkViewport("3D View")
+        # Criar os 4 viewports com cores de fundo levemente diferentes
+        self.view_axial = VtkViewport("Axial", bg_color=(0.1, 0.12, 0.1))
+        self.view_sagittal = VtkViewport("Sagittal", bg_color=(0.1, 0.1, 0.12))
+        self.view_coronal = VtkViewport("Coronal", bg_color=(0.12, 0.1, 0.1))
+        self.view_3d = VtkViewport("3D View", bg_color=(0.15, 0.15, 0.15))
 
         # Adicionar ao Grid
         # 0,0 (Topo-Esquerda): Axial
@@ -204,6 +206,7 @@ class MainWindow(QMainWindow):
         """Cria um painel lateral esquerdo contendo os controles de Implante Virtual (Fase 8)."""
         dock = QDockWidget("Gerenciador de Implantes", self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
 
         panel = QWidget()
         layout = QVBoxLayout(panel)
@@ -282,6 +285,7 @@ class MainWindow(QMainWindow):
         """Cria um painel lateral contendo os controles da Fase 6 (Registro/ICP)."""
         dock = QDockWidget("Registration Tools", self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        dock.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
 
         # Container e Layout
         panel = QWidget()
