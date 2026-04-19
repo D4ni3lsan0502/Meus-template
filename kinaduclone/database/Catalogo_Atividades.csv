@@ -1,0 +1,41 @@
+ID_Atividade,Nome_Atividade,Descricao,Categoria,Idade_Minima_Dias,Idade_Maxima_Dias
+1,Hora da Barriguinha (Tummy Time),Coloque o bebê de bruços no seu peito ou em um tapete firme por 2 a 3 minutos. Chame a atenção dele para que tente levantar a cabeça.,Motor,15,90
+2,Bicicleta Suave,"Com o bebê de barriga para cima, mova as perninhas dele suavemente como se estivesse pedalando. Ajuda na digestão e consciência corporal.",Motor,10,90
+3,Contraste Visual,"Mostre cartões ou objetos com alto contraste (preto, branco e vermelho) a cerca de 25cm do rosto do bebê e mova lentamente para os lados.",Cognitivo,0,60
+4,Onde está o Som?,"Agite um chocalho suavemente de um lado do bebê (fora da visão) para incentivá-lo a virar o rosto em direção ao som.",Cognitivo,30,90
+5,Conversa de Troca de Fralda,"Aproveite a troca de fraldas para olhar nos olhos e narrar o que está fazendo, pausando para ver se o bebê responde com olhares ou balbucios.",Linguagem,0,90
+6,Imitação Facial,"Faça expressões faciais exageradas perto do rosto do bebê (mostrar a língua, abrir a boca, sorrir) e espere para ver se ele tenta imitar.",Socioemocional,20,90
+7,Agarrar o Dedo,"Coloque seu dedo indicador na palma da mão do bebê para acionar o reflexo de preensão. Puxe suavemente para que ele sinta a tensão.",Motor Fino,0,60
+8,Dança Lenta,"Segure o bebê no colo de forma segura e dance lentamente pelo quarto ao som de uma música calma, narrando o ritmo.",Socioemocional,10,90
+9,Descobrindo as Mãos,"Coloque pulseiras que fazem barulho (ou meias coloridas) nos pulsos do bebê para que ele comece a notar as próprias mãos ao movê-las.",Cognitivo,60,90
+10,Vocalizações,"Quando o bebê fizer qualquer som (""ah"", ""eh""), repita o som de volta para ele com entusiasmo, iniciando o ciclo de 'dar e receber'.",Linguagem,45,90
+11,Rolando com Ajuda,"Com o bebê de costas, mostre um brinquedo ao lado dele e guie suavemente seu quadril para ajudá-lo a rolar para pegar o objeto.",Motor,91,180
+12,Aviãozinho Sustentado,"Segure o bebê de bruços apoiado nos seus antebraços e voe com ele pela sala. Fortalece o pescoço e as costas.",Motor,120,180
+13,Passando o Objeto,Entregue um brinquedo pequeno na mão do bebê e incentive-o a passar de uma mão para a outra.,Motor Fino,150,180
+14,O Espelho Mágico,Coloque o bebê de frente para um espelho inquebrável. Aponte para ele e diga o nome dele com alegria.,Socioemocional,120,180
+15,Esconde-Esconde de Pano,"Cubra o rosto do bebê com uma fraldinha fina e transparente por 2 segundos e puxe dizendo ""Achou!"".",Cognitivo,120,180
+16,Causa e Efeito: Tambor,Dê uma colher de pau e uma panela virada para baixo para o bebê bater e descobrir o som que suas ações produzem.,Cognitivo,150,180
+17,Texturas Diferentes,"Passe tecidos com diferentes texturas (seda, toalha, algodão) pelas mãos e pés do bebê, nomeando as sensações (""macio"", ""áspero"").",Cognitivo,91,150
+18,Leitura com Apontamentos,Leia um livro com figuras grandes e guie a mãozinha do bebê para tocar nas imagens enquanto você as nomeia.,Linguagem,120,180
+19,Balbucio Musical,"Cante músicas infantis que tenham repetições de sílabas (como ""bá-bá-bá"") para incentivar a imitação sonora.",Linguagem,120,180
+20,O Voo das Bolhas,Sopre bolhas de sabão perto do bebê e deixe-o observar. Isso treina o foco visual contínuo e a percepção espacial.,Socioemocional,150,180
+21,Sentando com Apoio (Tripé),"Sente o bebê no chão com as pernas em 'V' e coloque as mãos dele à frente apoiadas no chão. Proteja as costas com almofadas.",Motor,181,210
+22,Pista de Obstáculos de Engatinhar,Espalhe almofadas no chão e coloque o brinquedo favorito do outro lado para incentivá-lo a passar por cima rastejando/engatinhando.,Motor,240,270
+23,Movimento de Pinça,Coloque pedaços pequenos de alimentos seguros (como banana amassada ou puffs de bebê) na bandeja e mostre como pegar usando o polegar e o indicador.,Motor Fino,240,270
+24,A Caixa de Surpresas,Coloque brinquedos dentro de uma caixa de papelão com um buraco em cima e deixe o bebê enfiar a mão e tirar um por um.,Cognitivo,210,270
+25,Cadê o Brinquedo?,"Esconda um brinquedo sob uma manta enquanto o bebê olha. Veja se ele levanta a manta para procurar (permanência do objeto).",Cognitivo,240,270
+26,Batendo Palmas,Segure as mãos do bebê e cante uma música batendo palmas no ritmo. Depois, veja se ele tenta bater palmas sozinho.,Motor,210,270
+27,Reconhecendo o Nome,"Fique fora do campo de visão do bebê e chame-o pelo nome. Celebre com entusiasmo quando ele virar para te procurar.",Socioemocional,181,270
+28,Dar e Receber Objetos,"Peça um brinquedo que está na mão dele (""Me dá?""). Se ele soltar na sua mão, agradeça e devolva logo em seguida.",Socioemocional,240,270
+29,Imitação de Sons de Animais,"Mostre figuras ou brinquedos de animais e faça o som de forma exagerada (""O cachorro faz au-au"").",Linguagem,210,270
+30,Diálogo de Duas Vias,"Quando ele balbuciar, responda como se fosse uma conversa séria. Deixe uma pausa e espere ele ""falar"" novamente.",Linguagem,181,270
+31,O Puxador de Móveis,Coloque um brinquedo atrativo no assento do sofá. Incentive o bebê a se apoiar no sofá e se puxar para ficar em pé.,Motor,271,330
+32,Passos Laterais (Cruising),"Com o bebê em pé apoiado no sofá, mova o brinquedo um pouco para o lado, forçando-o a dar passos laterais se segurando.",Motor,300,365
+33,Torre de Blocos,Mostre como empilhar dois blocos grandes e incentivar o bebê a imitar a ação ou a derrubar a torre.,Motor Fino,300,365
+34,Colocar e Tirar,Dê um balde vazio e várias bolinhas. Ensine a colocar todas dentro do balde e depois virar o balde para esvaziar.,Cognitivo,271,365
+35,Encaixe Simples,"Use um brinquedo de encaixar formas geométricas. Comece apenas com a forma redonda, que é a mais fácil, e guie a mão dele.",Cognitivo,330,365
+36,Tchau-Tchau,"Crie o hábito de acenar e dizer ""Tchau"" sempre que alguém sair de um cômodo, incentivando a imitação do gesto.",Socioemocional,271,365
+37,Mandar Beijo,Mostre como colocar a mão na boca e mandar um beijo voador. Celebre se ele tentar repetir o movimento.,Socioemocional,300,365
+38,Apontar o que Quer,"Quando ele quiser algo que está fora de alcance, aponte para o objeto antes de pegar. Incentive-o a usar o dedo indicador para apontar.",Linguagem,330,365
+39,Partes do Corpo,"Pergunte ""Onde está o seu nariz?"" e aponte suavemente para o nariz dele. Repita com outras partes básicas do rosto.",Linguagem,330,365
+40,Virar a Página,Dê livros de páginas grossas (cartonadas) e deixe que o bebê seja o responsável por virar as páginas durante a leitura.,Motor Fino,300,365
